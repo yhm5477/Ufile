@@ -43,7 +43,7 @@ def _sanitize_filename(name: str) -> str:
     return name[:80]
 
 
-def save_classified(
+def test_saver(
     src_path: str,
     output_dir: str,
     label: str,

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 import logging
+from app.scanner import Scanner
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".jfif"}
 
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".jfif"}
 
 @dataclass
-class ItemResult:
+class ItemResult: #포멧선언
     index: int
     total: int
     filename: str
@@ -55,7 +56,7 @@ class ClassificationService:
                 res.decision_reason = reason
 
                 step = "save"
-                saved_name = self.saver.save_classified(
+                saved_name = self.saver.test_saver(
                     src_path=str(img),
                     output_dir=output_dir,
                     label=final_label,

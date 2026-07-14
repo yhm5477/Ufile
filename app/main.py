@@ -1,4 +1,7 @@
 # app/main.py
+####################################################
+# uvicorn app.main:app --reload 
+####################################################터미널에 입력
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +10,12 @@ import uuid
 
 from .database import engine, Base
 from .models import TaskLog, FileHistory
+
+from app.config import INPUT_DIR, OUTPUT_DIR
+from app.service import ClassificationService # service.py에서 정의한 인스턴스
+import app.scanner as scanner  # 휘민 학생이 작성한 AI 스캐너 모듈
+from app.test_saver import test_saver as saver     # 선우 팀원이 작성한 물리 저장 모듈
+from app.service import ClassificationService
 
 # [1단계] 서버 구동 시 SQLite 데이터베이스 파일(ufile.db) 및 테이블 자동 생성[cite: 9, 10]
 Base.metadata.create_all(bind=engine)
@@ -25,6 +34,12 @@ app.add_middleware(
 
 # [4단계] API 라우터 선언 구역 (★ 무조건 static 마운트보다 위에 있어야 정상 작동합니다)
 
+classification_service = ClassificationService(
+    scanner_module=scanner,
+    saver_module= saver,
+    high_threshold=0.75,
+    mid_threshold=0.55
+)
 # 1) 데이터베이스 및 서버 연결 상태 검증용 API (Health Check)
 @app.get("/api/health")
 def health_check():
@@ -39,7 +54,12 @@ async def upload_images(background_tasks: BackgroundTasks, files: List[UploadFil
     task_id = f"task_{uuid.uuid4().hex[:8]}"
     
     # TODO: 향후 류휘민 개발자님이 완성할 핵심 AI 추론 엔진(service.py) 연동 영역
-    # background_tasks.add_task(classification_service.run_folder, ...)
+    # background_tasks.add_task(classification_v.)
+    background_tasks.add_task(
+        classification_service.run_folder, 
+        input_dir=INPUT_DIR, 
+        output_dir=OUTPUT_DIR
+    )
     
     return {
         "task_id": task_id,
