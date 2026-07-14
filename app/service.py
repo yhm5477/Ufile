@@ -1,10 +1,10 @@
-# test/test_service.py
+# _service.py
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 import logging
 from app.scanner import Scanner
-
+from app.saver import save_classified
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".jfif"}
 
 
@@ -56,7 +56,7 @@ class ClassificationService:
                 res.decision_reason = reason
 
                 step = "save"
-                saved_name = self.saver.test_saver(
+                saved_name = self.saver.save_classified(
                     src_path=str(img),
                     output_dir=output_dir,
                     label=final_label,

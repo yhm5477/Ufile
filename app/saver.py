@@ -1,4 +1,4 @@
-# test/test_saver.py
+# saverst/.py
 from pathlib import Path
 from datetime import datetime
 import shutil
@@ -43,7 +43,7 @@ def _sanitize_filename(name: str) -> str:
     return name[:80]
 
 
-def test_saver(
+def save_classified(
     src_path: str,
     output_dir: str,
     label: str,

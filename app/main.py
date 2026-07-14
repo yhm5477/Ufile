@@ -13,9 +13,8 @@ from .models import TaskLog, FileHistory
 
 from app.config import INPUT_DIR, OUTPUT_DIR
 from app.service import ClassificationService # service.py에서 정의한 인스턴스
-import app.scanner as scanner  # 휘민 학생이 작성한 AI 스캐너 모듈
-from app.test_saver import test_saver as saver     # 선우 팀원이 작성한 물리 저장 모듈
-from app.service import ClassificationService
+from app.scanner import Scanner  # 휘민 학생이 작성한 AI 스캐너 모듈
+from app import saver    # 선우 팀원이 작성한 물리 저장 모듈
 
 # [1단계] 서버 구동 시 SQLite 데이터베이스 파일(ufile.db) 및 테이블 자동 생성[cite: 9, 10]
 Base.metadata.create_all(bind=engine)
@@ -34,11 +33,13 @@ app.add_middleware(
 
 # [4단계] API 라우터 선언 구역 (★ 무조건 static 마운트보다 위에 있어야 정상 작동합니다)
 
+# 1. AI 스캐너 기계를 메모리에 조립합니다.
+clip_scanner_instance = Scanner()
+
+# 2. 조립된 clip_scanner_instance 기계를 서비스에 부품으로 주입(Injection)합니다.
 classification_service = ClassificationService(
-    scanner_module=scanner,
-    saver_module= saver,
-    high_threshold=0.75,
-    mid_threshold=0.55
+    scanner_module = clip_scanner_instance,
+    saver_module = saver
 )
 # 1) 데이터베이스 및 서버 연결 상태 검증용 API (Health Check)
 @app.get("/api/health")
