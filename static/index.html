@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 이미지 검색</title>
+  <link rel="stylesheet" href="sytle.css">
+</head>
+<body>
+
+  <div class="app">
+    <header>
+      <h1>AI 이미지 검색</h1>
+      <button id="history-toggle">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </header>
+
+    <!-- 업로드 영역 -->
+    <div id="drop-zone">
+      <div class="drop-inner">
+        <div class="drop-icon">📁</div>
+        <p>사진을 여기에 드래그하거나 클릭하여 업로드</p>
+        <span>JPG, PNG, WEBP, GIF 지원 · 여러 장 동시 가능</span>
+      </div>
+      <input type="file" id="file-input" multiple accept="image/*" hidden>
+    </div>
+
+    <!-- 검색창 -->
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-input" placeholder="검색어 입력" />
+      <button id="clear-search">✕</button>
+    </div>
+
+    <!-- 진행 상태 -->
+    <div id="status-bar" class="hidden">
+      <div class="progress-wrap">
+        <div id="progress-fill"></div>
+      </div>
+      <span id="status-text"></span>
+    </div>
+
+    <!-- 결과 요약 -->
+    <div id="summary" class="hidden">
+      <span id="summary-text"></span>
+    </div>
+
+    <!-- 선택 모드 툴바 -->
+    <div id="select-toolbar">
+      <div id="select-toolbar-left">
+        <button id="select-toggle">선택</button>
+        <button id="delete-all" class="hidden">삭제</button>
+        <button id="select-all" class="hidden">전체 선택</button>
+        <span id="select-count" class="hidden">0장 선택됨</span>
+      </div>
+      <button id="download-selected" class="hidden">⬇ 다운로드</button>
+    </div>
+
+    <!-- 갤러리 -->
+    <div id="gallery"></div>
+
+    <!-- 결과 없음 -->
+    <div id="no-results" class="hidden">
+      <p>검색 결과가 없습니다.</p>
+    </div>
+  </div>
+
+  <!-- 기록 모달 -->
+  <div id="history-modal" class="hidden">
+    <div id="history-panel">
+      <div id="history-header">
+        <span>다운로드 기록</span>
+        <div id="history-header-btns">
+          <button id="history-select-all" class="hidden">전체 선택</button>
+          <button id="history-delete-all" class="hidden">삭제</button>
+          <button id="history-select-toggle">선택</button>
+          <button id="history-close">✕</button>
+        </div>
+      </div>
+      <div id="history-list"></div>
+      <div id="history-empty" class="hidden">
+        <p>아직 다운로드 기록이 없습니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 라이트박스 -->
+  <div id="lightbox" class="hidden">
+    <button id="lightbox-close">✕</button>
+    <img id="lightbox-img" src="" alt="">
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
