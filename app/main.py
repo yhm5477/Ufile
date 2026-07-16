@@ -173,4 +173,8 @@ def get_task_status(task_id: str, db: Session = Depends(get_db)):
     }
 
 # [5단계] 최범석 팀원의 프론트엔드 정적 파일 호스팅 마운트 (★ 무조건 최하단 고정)
+# 1. [추가] AI가 분류한 output 폴더를 브라우저가 읽을 수 있도록 정적 마운트 추가!
+app.mount("/output", StaticFiles(directory="output"), name="output")
+
+# 2. 기존 static 폴더 마운트 (무조건 가장 최하단 고정)
 app.mount("/", StaticFiles(directory="static", html=True), name="static")

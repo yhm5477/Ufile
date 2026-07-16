@@ -78,6 +78,9 @@ class ClassificationService:
                     else:
                         f_status = "success"
 
+
+                    web_accessible_path = f"/output/{final_label}/{saved_name}"
+                    
                     new_history = FileHistory(
                         task_id=task_id,
                         file_original_name=img.name,
@@ -86,7 +89,7 @@ class ClassificationService:
                         file_confidence=res.score,
                         file_status=f_status,
                         file_mode="dry-run" if dry_run else "normal",
-                        file_save_path=str(Path(output_dir) / final_label / saved_name)
+                        file_save_path=web_accessible_path  # 👈 웹 주소로 바인딩 변경
                     )
                     db.add(new_history)
                     db.commit() # 원자적 물리 저장 확정
