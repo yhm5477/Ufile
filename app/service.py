@@ -1,18 +1,14 @@
-# _service.py
+# app/service.py
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 import logging
-from app.scanner import Scanner
-from app.saver import save_classified
+
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".jfif"}
-
-
 logger = logging.getLogger(__name__)
-IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".jfif"}
 
 @dataclass
-class ItemResult: #포멧선언
+class ItemResult: 
     index: int
     total: int
     filename: str
@@ -36,61 +32,7 @@ class ClassificationService:
         self.review_label = review_label
         self.unknown_label = unknown_label
 
-    def run_folder(self, input_dir: str, output_dir: str, dry_run: bool = False) -> List[ItemResult]:
-        files = self._collect_images(input_dir)
-        total = len(files)
-
-        results: List[ItemResult] = []
-        for i, img in enumerate(files, start=1):
-            res = ItemResult(index=i, total=total, filename=img.name, src_path=str(img))
-            step = "init"
-            try:
-                step = "scan"
-                raw_label, score = self.scanner.scan(str(img))
-                res.raw_label = raw_label
-                res.score = float(score)
-
-                step = "decide"
-                final_label, reason = self._decide_label(raw_label, res.score)
-                res.final_label = final_label
-                res.decision_reason = reason
-
-                step = "save"
-                saved_name = self.saver.save_classified(
-                    src_path=str(img),
-                    output_dir=output_dir,
-                    label=final_label,
-                    confidence=res.score,
-                    dry_run=dry_run
-                )
-                res.saved_name = saved_name
-                res.status = "success"
-
-            except Exception as e:
-                res.status = "fail"
-                res.error = f"[{step}] {type(e).__name__}: {e}"
-                logger.error(f"Fail at step={step} | file={img} | error={e}", exc_info=True)
-
-            results.append(res)
-        return results
-
-    def _collect_images(self, input_dir: str) -> List[Path]:
-        p = Path(input_dir)
-        if not p.exists():
-            raise FileNotFoundError(f"INPUT_DIR not found: {input_dir}")
-        if not p.is_dir():
-            raise NotADirectoryError(f"INPUT_DIR is not a directory: {input_dir}")
-        files = [f for f in p.iterdir() if f.is_file() and f.suffix.lower() in IMAGE_EXTS]
-        return sorted(files)
-
-    def _decide_label(self, raw_label: str, score: float) -> Tuple[str, str]:
-        if score >= self.high:
-            return raw_label, "high_conf_ok"
-        if score >= self.mid:
-            return self.review_label, "mid_conf_to_review"
-        return self.unknown_label, "low_conf_to_unknown"
-
-    def run_folder(self, input_dir: str, output_dir: str, dry_run: bool = False) -> List[ItemResult]:
+    def run_folder(self, input_dir: str, output_dir: str, task_id: str = None, db = None, dry_run: bool = False) -> List[ItemResult]:
         files = self._collect_images(input_dir)
         total = len(files)
 
@@ -112,7 +54,7 @@ class ClassificationService:
                 res.final_label = final_label
                 res.decision_reason = reason
 
-            # 3) 저장
+                # 3) 파일 시스템 물리 이동 저장[cite: 6]
                 step = "save"
                 saved_name = self.saver.save_classified(
                     src_path=str(img),
@@ -121,18 +63,38 @@ class ClassificationService:
                     confidence=res.score,
                     dry_run=dry_run
                 )
-
                 res.saved_name = saved_name
                 res.status = "success"
+
+                # [★ 공백 3 해결] 데이터 분석 완료 시 SQLite DB file_history 테이블에 실시간 로그 적재
+                if db and task_id:
+                    from .models import FileHistory
+                    
+                    # 3단계 정책에 따른 최종 상태값 매핑
+                    if final_label == self.review_label:
+                        f_status = "review"
+                    elif final_label == self.unknown_label:
+                        f_status = "unknown"
+                    else:
+                        f_status = "success"
+
+                    new_history = FileHistory(
+                        task_id=task_id,
+                        file_original_name=img.name,
+                        file_new_name=saved_name,
+                        file_label=final_label,
+                        file_confidence=res.score,
+                        file_status=f_status,
+                        file_mode="dry-run" if dry_run else "normal",
+                        file_save_path=str(Path(output_dir) / final_label / saved_name)
+                    )
+                    db.add(new_history)
+                    db.commit() # 원자적 물리 저장 확정
 
             except Exception as e:
                 res.status = "fail"
                 res.error = f"[{step}] {type(e).__name__}: {e}"
-
-                logger.error(
-                    f"Fail at step={step} | file={img} | error={e}",
-                    exc_info=True
-                )
+                logger.error(f"Fail at step={step} | file={img} | error={e}", exc_info=True)
 
             results.append(res)
 
@@ -152,15 +114,6 @@ class ClassificationService:
         return sorted(files)
 
     def _decide_label(self, raw_label: str, score: float) -> Tuple[str, str]:
-        """
-        분기 정책:
-        - score >= high : raw_label 그대로 저장(자동 분류)
-        - mid <= score < high : review 폴더로 보냄
-        - score < mid : unknown 폴더로 보냄
-
-        ※ 지금은 CLIP 후보 라벨을 raw_label로 받고 있으니,
-          high 구간에서는 raw_label(cat/dog/wild animal...)을 그대로 final로 써도 안전함.
-        """
         if score >= self.high:
             return raw_label, "high_conf_ok"
         if score >= self.mid:

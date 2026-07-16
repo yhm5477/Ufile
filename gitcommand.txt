@@ -1,0 +1,8 @@
+# 1단계: 변경되거나 추가된 소스 코드 파일들을 깃에 담기 (.gitignore 덕분에 venv는 알아서 걸러집니다!)
+git add .
+
+# 2단계: 이번 업데이트 내용에 대한 한 줄 장부(메시지) 적기
+git commit -m "Fix: resolve save step module conflict and path integration"
+
+# 3단계: 깃허브 원격 저장소의 main 브랜치로 최종 밀어넣기 (덮어쓰기 완결)
+git push origin main
